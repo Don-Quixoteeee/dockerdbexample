@@ -1,0 +1,14 @@
+services:
+  web:
+    build: .
+    environment:
+      - DATABASE_URL=postgresql://neondb_owner:npg_mZ3TXio2NdUO@ep-odd-butterfly-ai7us6o6.c-4.us-east-1.aws.neon.tech/neondb?sslmode=require
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/health || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 15s
