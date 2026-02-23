@@ -1,36 +1,39 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# BrightPath Tutoring – Student Objectives Web App
 
-## Getting Started
+## Project Overview
+BrightPath Tutoring delivers a student-facing web app for viewing lessons and completing objectives. The goal is to give students a reliable, consistent experience across devices while teachers publish lessons, track progress, and send reminders. Dockerized delivery ensures the same environment in dev, test, and production—reducing classroom interruptions from “works on my machine” issues.
 
-First, run the development server:
+## Quick Start
+Build and run the container (expects `.env` with `DATABASE_URL` for Neon/Postgres):
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+docker build -t brightpath-app . && docker run -p 3000:3000 --env-file .env brightpath-app
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Architecture
+- Web container: Next.js app built to standalone output, served by `node server.js` on port 3000.
+- Database: External managed Postgres (Neon) via `DATABASE_URL`; no local DB container required. Use `docker-compose.yml` only if you add services later.
+- Image: Multi-stage `Dockerfile` (builder on `node:20-alpine`, runner on `node:20-alpine`) to keep the runtime image small and production-focused.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Business Value of Docker
+- Environment parity: Students and teachers get the same behavior regardless of host OS; deployments match local dev bits.
+- Faster recovery: Containers bake dependencies, reducing time spent chasing missing tools when lessons need to go live.
+- Predictable updates: Versioned images minimize regressions during school terms and allow quick rollbacks.
+- Security posture: Smaller runtime surface with only the built app and production deps.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Tech Stack
+- Next.js (app/front-end)
+- Node.js 20 (runtime)
+- Docker (multi-stage build, container packaging)
+- Postgres (Neon managed) via `DATABASE_URL`
+- Prisma ORM (datasource configured through `prisma.config.ts`)
 
-## Learn More
+## Why Containerization Matters for EdTech
+- Consistent classroom experience: Containerized builds prevent drift so lesson playback, objectives, and authentication remain stable during peak usage.
+- Reduced downtime: Quick redeploys and image rollbacks keep learning uninterrupted.
+- Simplified onboarding: New contributors and IT staff can run the same image with a single command, avoiding setup friction.
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Development Notes
+- Ensure `.env` contains the managed Postgres URL (`sslmode=require`).
+- For schema changes, run `npx prisma migrate dev --name <change>` and `npx prisma generate` locally before baking a new image.
+- Use `docker compose up --build` only if you later add supporting services (e.g., caching, background workers); currently the app talks directly to the managed DB.
