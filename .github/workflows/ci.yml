@@ -1,0 +1,29 @@
+name: CI/CD
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ── JOB 1: always runs ──────────────────────────────
+  build-and-test:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}  # ← secret injected
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4          # ← copies repo to runner
+      - name: Build containers
+        run: docker compose build          # ← builds your Dockerfile
+      - name: Start services
+        run: docker compose up -d          # ← starts app + db
+      - name: Wait for database
+        run: sleep 15                      # ← gives Postgres time
+      - name: Run migrations
+        run: docker compose exec -T app npx prisma migrate deploy
+      - name: Run tests
+        run: docker compose exec -T app npm test  # ← fails if tests fail
+      - name: Tear down
+        if: always()                       # ← runs even if step failed
+        run: docker compose down -v
