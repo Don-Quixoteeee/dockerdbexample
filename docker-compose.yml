@@ -1,8 +1,8 @@
 services:
   web:
     build: .
-    env_file:
-      - .env
+    env:
+      - DATABASE_URL: ${{ secrets.DATABASE_URL }}
     ports:
       - "3000:3000"
     restart: unless-stopped
